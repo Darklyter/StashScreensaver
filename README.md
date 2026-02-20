@@ -8,10 +8,15 @@ A dynamic, scattered-collage screensaver for Android TV that fetches images dire
 - **Dynamic Scattered Layout**: 
   - Intelligent global pre-planning ensures images fill the screen with minimal overlap.
   - Supports mixed aspect ratios (Portrait, Landscape, Square) using actual image resolution data.
-  - Organic "scattered photo" look with random tilt and size variations.
+  - Organic "scattered photo" look with random tilt, size variations, and modern **drop shadows**.
+- **High-Quality 4K Support**:
+  - **DPI-Aware Scaling**: Automatically renders images at the TV's native physical resolution, ensuring pin-sharp quality on 4K devices like the Nvidia Shield.
+  - **Hardware-Accelerated Anti-Aliasing**: Advanced rendering techniques to ensure smooth, non-jagged edges on rotated images.
+  - **Manual Overrides**: Options to force 1080p, 4K, or Auto-detection.
 - **Configurable Settings**:
   - **Server Connection**: Custom IP address and Port for your Stash instance.
-  - **Image Filtering**: Filter by Orientation (Portrait, Landscape, Both) and Stash Tags (Include/Exclude by numeric IDs).
+  - **Customizable Background**: Select between Black, Grey, White, or enter a custom hex color for the backdrop.
+  - **Image Filtering**: Filter by Orientation (Portrait, Landscape, Both), Stash Tags (Include/Exclude), and Studio IDs (with optional Child Studio depth).
   - **Customizable Display**: Control the number of images to retrieve and the number of images to show on screen at once.
   - **Dynamic Timing**: Configurable refresh delay with a percentage-based variance for natural, non-simultaneous transitions.
 - **Infinite Sequential Shuffling**: Uses a shuffled queue to ensure every image in a batch is shown before repeating, with silent background fetching for new batches.
@@ -20,7 +25,7 @@ A dynamic, scattered-collage screensaver for Android TV that fetches images dire
 ## How it works
 
 1. **On Activation**: The screensaver shows a themed splash screen while connecting to your Stash server.
-2. **GraphQL Query**: Retrieves a batch of images based on your filters (Tags, Orientation, Resolution > HD).
+2. **GraphQL Query**: Retrieves a batch of images based on your filters (Tags, Studios, Orientation, Resolution > HD).
 3. **Global Planning**: Calculates a non-overlapping layout for the first set of images before they fade in.
 4. **Independent Rotation**: Each image container independently fades out and repositions to a new random location when its unique timer (Base Delay ± Variance) expires.
 5. **Silent Refill**: As the current batch of images runs low, the app silently fetches more in the background to maintain an endless stream of content.

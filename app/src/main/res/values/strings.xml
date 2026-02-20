@@ -1,4 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Stash Screensaver</string>
+    <string name="stash_server_address">Stash Server Address</string>
+    <string name="stash_address_hint">e.g. 192.168.1.71</string>
+    <string name="port">Port</string>
+    <string name="port_hint">e.g. 9999</string>
+    <string name="splash_screen_gender">Splash Screen Gender</string>
+    <string name="female">Female</string>
+    <string name="male">Male</string>
+    <string name="image_orientation">Image Orientation</string>
+    <string name="portrait">Portrait</string>
+    <string name="landscape">Landscape</string>
+    <string name="both">Both</string>
+    <string name="target_resolution">Target Resolution</string>
+    <string name="res_auto">Auto (System Detected)</string>
+    <string name="res_high">High Quality (Native 4K/DPI Aware)</string>
+    <string name="res_1080p">Force 1080p</string>
+    <string name="res_4k">Force 4K (3840x2160)</string>
+    <string name="background_color">Background Color</string>
+    <string name="black">Black</string>
+    <string name="grey">Grey</string>
+    <string name="white">White</string>
+    <string name="other">Other</string>
+    <string name="hex_color_hint">Hex color (e.g. #FF0000)</string>
+    <string name="included_tags">Included Tags</string>
+    <string name="excluded_tags">Excluded Tags</string>
+    <string name="tag_ids_hint">The numeric Stash tag IDs, separated by commas</string>
+    <string name="included_studio_ids">Included Studio IDs</string>
+    <string name="studio_ids_hint">The numeric Stash studio IDs, separated by commas</string>
+    <string name="include_child_studios">Include Child Studios</string>
+    <string name="images_to_retrieve">Images to Retrieve</string>
+    <string name="default_retrieve_count">Default: 250</string>
+    <string name="images_to_display">Images to Display at Once</string>
+    <string name="default_display_count">Default: 4</string>
+    <string name="refresh_delay">Refresh Delay (seconds)</string>
+    <string name="default_refresh_delay">Default: 30</string>
+    <string name="delay_variance">Delay Variance (%)</string>
+    <string name="default_delay_variance">Default: 20</string>
+    <string name="save_settings">Save Settings</string>
+    <string name="test_stash_connection">Test Stash Connection</string>
+    <string name="open_screensaver_settings">Open Screensaver Settings</string>
 </resources>

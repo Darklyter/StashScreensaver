@@ -1,16 +1,22 @@
 package com.stash.screensaver
 
 import android.content.Context
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.Rect
+import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.service.dreams.DreamService
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -37,6 +43,7 @@ class ScreensaverService : DreamService() {
         
         private const val FADE_MS = 1000L
         private const val MIN_SPLASH_TIME_MS = 5000L
+        private const val BORDER_SIZE_DP = 3 // Shrinked by 50% from 6
     }
 
     private var stashUrl = DEFAULT_STASH_URL
@@ -48,8 +55,13 @@ class ScreensaverService : DreamService() {
     private var imageOrientation = "portrait"
     private var includedTags = ""
     private var excludedTags = ""
+    private var includedStudios = ""
+    private var includeChildStudios = true
+    private var resMode = "auto"
+    private var bgColorType = "black"
+    private var bgCustomHex = "#000000"
 
-    private data class ImageData(val url: String, val width: Int, val height: Int)
+    private data class ImageData(val id: String, val url: String, val width: Int, val height: Int)
     
     private var masterImageList = mutableListOf<ImageData>()
     private var currentShuffledQueue = mutableListOf<ImageData>()
@@ -78,6 +90,7 @@ class ScreensaverService : DreamService() {
         isFullscreen = true
         try {
             setContentView(R.layout.screensaver_layout)
+            applyBackgroundColor()
             setupSplashScreen()
         } catch (e: Exception) {
             Log.e(TAG, "Error in onAttachedToWindow", e)
@@ -97,6 +110,24 @@ class ScreensaverService : DreamService() {
         imageOrientation = prefs.getString("image_orientation", "portrait") ?: "portrait"
         includedTags = prefs.getString("included_tags", "") ?: ""
         excludedTags = prefs.getString("excluded_tags", "") ?: ""
+        includedStudios = prefs.getString("included_studios", "") ?: ""
+        includeChildStudios = prefs.getBoolean("include_child_studios", true)
+        resMode = prefs.getString("res_mode", "auto") ?: "auto"
+        bgColorType = prefs.getString("bg_color_type", "black") ?: "black"
+        bgCustomHex = prefs.getString("bg_custom_hex", "#000000") ?: "#000000"
+        
+        Log.d(TAG, "Settings Loaded: ResMode=$resMode, Orientation=$imageOrientation, DisplayCount=$displayCount")
+    }
+
+    private fun applyBackgroundColor() {
+        val container = findViewById<FrameLayout>(R.id.screensaver_container)
+        val color = when (bgColorType) {
+            "grey" -> Color.DKGRAY
+            "white" -> Color.WHITE
+            "other" -> try { Color.parseColor(bgCustomHex) } catch (e: Exception) { Color.BLACK }
+            else -> Color.BLACK
+        }
+        container?.setBackgroundColor(color)
     }
 
     private fun setupSplashScreen() {
@@ -119,6 +150,7 @@ class ScreensaverService : DreamService() {
         if (splashBg != null) {
             Glide.with(applicationContext)
                 .load(splashUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .centerCrop()
                 .into(splashBg)
         }
@@ -145,10 +177,11 @@ class ScreensaverService : DreamService() {
         for (i in 0 until displayCount) {
             val iv = ImageView(this).apply {
                 layoutParams = FrameLayout.LayoutParams(100, 100)
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setBackgroundColor(0xFF111111.toInt())
+                scaleType = ImageView.ScaleType.FIT_CENTER
                 alpha = 0f
                 visibility = View.GONE
+                elevation = 20f
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
             }
             container.addView(iv, 0)
             imageViews.add(iv)
@@ -171,14 +204,27 @@ class ScreensaverService : DreamService() {
                     delay(50)
                 }
                 
-                planGlobalInitialLayout(container.width, container.height)
+                val metrics = resources.displayMetrics
+                Log.d(TAG, "DEVICE DISPLAY: ${container.width}x${container.height}, Density=${metrics.density}, DPI=${metrics.densityDpi}")
+
+                val initialImages = mutableListOf<ImageData>()
+                synchronized(this@ScreensaverService) {
+                    for (i in 0 until displayCount) {
+                        if (currentShuffledQueue.isNotEmpty()) {
+                            initialImages.add(currentShuffledQueue.removeAt(0))
+                        }
+                    }
+                }
+
+                planGlobalInitialLayout(container.width, container.height, initialImages)
 
                 splash?.animate()?.alpha(0f)?.setDuration(1500)?.withEndAction {
                     splash.visibility = View.GONE
                 }?.start()
 
                 imageViews.forEachIndexed { index, view ->
-                    startImageCycle(index, view)
+                    val initialImage = if (index < initialImages.size) initialImages[index] else null
+                    startImageCycle(index, view, initialImage)
                 }
             } else {
                 tvLoading.text = "Error: Stash server unreachable"
@@ -186,7 +232,25 @@ class ScreensaverService : DreamService() {
         }
     }
 
-    private fun planGlobalInitialLayout(screenW: Int, screenH: Int) {
+    private fun getTargetDisplayDimensions(logicalW: Int, logicalH: Int): Pair<Int, Int> {
+        val metrics = resources.displayMetrics
+        val density = metrics.density
+        
+        return when (resMode) {
+            "high" -> Pair((logicalW * density).toInt(), (logicalH * density).toInt())
+            "4k" -> {
+                val scaleFactor = 3840.0 / metrics.widthPixels.toDouble()
+                Pair((logicalW * scaleFactor).toInt(), (logicalH * scaleFactor).toInt())
+            }
+            "1080p" -> {
+                val scaleFactor = 1920.0 / metrics.widthPixels.toDouble()
+                Pair((logicalW * scaleFactor).toInt(), (logicalH * scaleFactor).toInt())
+            }
+            else -> Pair(logicalW, logicalH)
+        }
+    }
+
+    private fun planGlobalInitialLayout(screenW: Int, screenH: Int, images: List<ImageData>) {
         synchronized(layoutMutex) {
             var coverageTarget = 0.75
             var success = false
@@ -199,7 +263,7 @@ class ScreensaverService : DreamService() {
                 var allPlaced = true
                 for (i in 0 until displayCount) {
                     var placed = false
-                    val imgData = if (i < currentShuffledQueue.size) currentShuffledQueue[i] else null
+                    val imgData = if (i < images.size) images[i] else null
                     val ratio = if (imgData != null && imgData.height > 0) imgData.width.toDouble() / imgData.height else 0.66
                     
                     val baseH = sqrt(targetAreaPerImage / ratio)
@@ -263,24 +327,39 @@ class ScreensaverService : DreamService() {
                 else -> "" 
             }
 
-            var galleriesFilter = ""
-            val includedList = includedTags.split(",").mapNotNull { it.trim().toIntOrNull() }
-            val excludedList = excludedTags.split(",").mapNotNull { it.trim().toIntOrNull() }
+            var galleriesFilterContent = ""
+            val includedTagList = includedTags.split(",").mapNotNull { it.trim().toIntOrNull() }
+            val excludedTagList = excludedTags.split(",").mapNotNull { it.trim().toIntOrNull() }
 
-            if (includedList.isNotEmpty() || excludedList.isNotEmpty()) {
-                val modifier = if (includedList.isNotEmpty()) "INCLUDES" else "EXCLUDES"
-                val valuePart = if (includedList.isNotEmpty()) "value: [${includedList.joinToString(",")}]" else "value: [${excludedList.joinToString(",")}]"
-                val excludePart = if (includedList.isNotEmpty() && excludedList.isNotEmpty()) "\n          excludes: [${excludedList.joinToString(",")}]" else ""
+            if (includedTagList.isNotEmpty() || excludedTagList.isNotEmpty()) {
+                val modifier = if (includedTagList.isNotEmpty()) "INCLUDES" else "EXCLUDES"
+                val valuePart = if (includedTagList.isNotEmpty()) "value: [${includedTagList.joinToString(",")}]" else "value: [${excludedTagList.joinToString(",")}]"
+                val excludePart = if (includedTagList.isNotEmpty() && excludedTagList.isNotEmpty()) "\n          excludes: [${excludedTagList.joinToString(",")}]" else ""
                 
-                galleriesFilter = """
-                    galleries_filter: {
-                        tags: {
-                          modifier: $modifier
-                          $valuePart$excludePart
-                        }
+                galleriesFilterContent += """
+                    tags: {
+                      modifier: $modifier
+                      $valuePart$excludePart
                     }
                 """.trimIndent()
             }
+
+            val includedStudioList = includedStudios.split(",").mapNotNull { it.trim().toIntOrNull() }
+            if (includedStudioList.isNotEmpty()) {
+                if (galleriesFilterContent.isNotEmpty()) galleriesFilterContent += ",\n"
+                val depthValue = if (includeChildStudios) 99 else 0
+                galleriesFilterContent += """
+                    studios: {
+                      modifier: INCLUDES
+                      value: [${includedStudioList.joinToString(",")}]
+                      depth: $depthValue
+                    }
+                """.trimIndent()
+            }
+
+            val galleriesFilter = if (galleriesFilterContent.isNotEmpty()) {
+                "galleries_filter: {\n$galleriesFilterContent\n},"
+            } else ""
 
             val query = """
                 query {
@@ -293,6 +372,7 @@ class ScreensaverService : DreamService() {
                     }
                   ) { 
                     images { 
+                      id
                       paths { image } 
                       visual_files {
                         ... on ImageFile {
@@ -316,7 +396,8 @@ class ScreensaverService : DreamService() {
                         val url = image.paths?.image
                         val file = image.visual_files?.firstOrNull()
                         if (url != null) {
-                            newImages.add(ImageData(url, file?.width ?: 0, file?.height ?: 0))
+                            val img = ImageData(image.id ?: "unknown", url, file?.width ?: 0, file?.height ?: 0)
+                            newImages.add(img)
                         }
                     }
                     if (newImages.isNotEmpty()) {
@@ -362,12 +443,12 @@ class ScreensaverService : DreamService() {
         }
     }
 
-    private fun repositionImageView(view: ImageView, index: Int, imgData: ImageData) {
+    private fun repositionImageView(view: ImageView, index: Int, imgData: ImageData): Rect? {
         synchronized(layoutMutex) {
-            val container = findViewById<FrameLayout>(R.id.screensaver_container) ?: return
+            val container = findViewById<FrameLayout>(R.id.screensaver_container) ?: return null
             val screenW = container.width
             val screenH = container.height
-            if (screenW <= 0 || screenH <= 0) return
+            if (screenW <= 0 || screenH <= 0) return null
 
             val ratio = if (imgData.height > 0) imgData.width.toDouble() / imgData.height else 0.66
             val targetAreaPerImage = (screenW * screenH * 0.75) / displayCount
@@ -416,38 +497,103 @@ class ScreensaverService : DreamService() {
                 view.layoutParams = it
                 view.rotation = bestRot
                 view.bringToFront()
-                bestCandidateRect?.let { rect -> currentRects[index] = rect }
+                bestCandidateRect?.let { rect -> 
+                    currentRects[index] = rect 
+                }
             }
+            return bestCandidateRect
         }
     }
 
-    private fun startImageCycle(index: Int, view: ImageView) {
+    private fun startImageCycle(index: Int, view: ImageView, firstImage: ImageData?) {
         view.visibility = View.VISIBLE
         imageJobs[index]?.cancel()
         imageJobs[index] = scope.launch {
             if (index > 0 && view.alpha == 0f) delay(index * 1500L)
             
+            var currentImageData = firstImage
             var isFirstLoad = true
+            
             while (isActive) {
-                val imgData = getNextImageData()
+                if (currentImageData == null) {
+                    currentImageData = getNextImageData()
+                }
+                
+                val imgData = currentImageData
                 if (imgData != null) {
+                    val targetRect: Rect?
                     if (!isFirstLoad) {
                         view.animate().alpha(0f).setDuration(FADE_MS).start()
                         delay(FADE_MS)
-                        repositionImageView(view, index, imgData)
+                        targetRect = repositionImageView(view, index, imgData)
                     } else {
                         view.alpha = 0f
+                        targetRect = currentRects[index]
                     }
                     
-                    withContext(Dispatchers.Main) {
-                        Glide.with(applicationContext).load(imgData.url).centerCrop().into(view)
+                    if (targetRect != null) {
+                        val overrideDimens = getTargetDisplayDimensions(targetRect.width(), targetRect.height())
+                        Log.d(TAG, "Displaying Image: ID=${imgData.id}, Original=${imgData.width}x${imgData.height}, LogicalTarget=${targetRect.width()}x${targetRect.height()}, ActualBitmap=${overrideDimens.first}x${overrideDimens.second}, URL=${imgData.url}")
+                        
+                        withContext(Dispatchers.Main) {
+                            Glide.with(applicationContext)
+                                .asBitmap()
+                                .load(imgData.url)
+                                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                .override(overrideDimens.first, overrideDimens.second)
+                                .centerCrop()
+                                .listener(object : RequestListener<Bitmap> {
+                                    override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Bitmap>, isFirstResource: Boolean): Boolean {
+                                        return false
+                                    }
+                                    override fun onResourceReady(resource: Bitmap, model: Any, target: Target<Bitmap>?, dataSource: DataSource, isFirstResource: Boolean): Boolean {
+                                        val palette = Palette.from(resource).generate()
+                                        val borderColor = palette.getVibrantColor(
+                                            palette.getMutedColor(
+                                                palette.getDominantColor(Color.LTGRAY)
+                                            )
+                                        )
+                                        
+                                        // Draw the bitmap onto a slightly larger canvas with a color-matched border and 2px transparent edge for AA
+                                        val borderPx = (BORDER_SIZE_DP * resources.displayMetrics.density).toInt()
+                                        val aaMargin = 2 // pixels for sub-pixel smoothing
+                                        
+                                        val output = Bitmap.createBitmap(
+                                            resource.width + (borderPx + aaMargin) * 2,
+                                            resource.height + (borderPx + aaMargin) * 2,
+                                            Bitmap.Config.ARGB_8888
+                                        )
+                                        val canvas = Canvas(output)
+                                        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+                                        
+                                        // Draw the border
+                                        paint.color = borderColor
+                                        val borderRect = RectF(
+                                            aaMargin.toFloat(),
+                                            aaMargin.toFloat(),
+                                            output.width.toFloat() - aaMargin,
+                                            output.height.toFloat() - aaMargin
+                                        )
+                                        canvas.drawRect(borderRect, paint)
+                                        
+                                        // Draw the image centered
+                                        canvas.drawBitmap(resource, (borderPx + aaMargin).toFloat(), (borderPx + aaMargin).toFloat(), paint)
+                                        
+                                        view.setImageBitmap(output)
+                                        return true // Handled
+                                    }
+                                })
+                                .into(view)
+                        }
+                        view.animate().alpha(1f).setDuration(FADE_MS).start()
+                        isFirstLoad = false
                     }
-                    view.animate().alpha(1f).setDuration(FADE_MS).start()
-                    isFirstLoad = false
                 } else {
                     delay(2000)
                     continue
                 }
+                
+                currentImageData = null
                 
                 val varianceMs = (baseRefreshDelayMs * (delayVariancePercent / 100.0)).toLong()
                 val randomOffset = if (varianceMs > 0) Random.nextLong(-varianceMs, varianceMs + 1) else 0L
@@ -472,7 +618,7 @@ class ScreensaverService : DreamService() {
     private data class StashResponse(val data: StashData?)
     private data class StashData(val findImages: FindImages?)
     private data class FindImages(val images: List<StashImage>?)
-    private data class StashImage(val paths: StashPaths?, val visual_files: List<VisualFile>?)
+    private data class StashImage(val id: String?, val paths: StashPaths?, val visual_files: List<VisualFile>?)
     private data class StashPaths(val image: String?)
     private data class VisualFile(val width: Int, val height: Int)
 }

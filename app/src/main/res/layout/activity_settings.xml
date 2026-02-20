@@ -112,6 +112,104 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:text="Target Resolution"
+            android:textColor="#FFFFFF" />
+
+        <RadioGroup
+            android:id="@+id/rg_resolution"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/rb_res_auto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Auto (System Detected)"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_res_high"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="High Quality (Native 4K/DPI Aware)"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_res_1080p"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Force 1080p"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_res_4k"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Force 4K (3840x2160)"
+                android:textColor="#FFFFFF" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Background Color"
+            android:textColor="#FFFFFF" />
+
+        <RadioGroup
+            android:id="@+id/rg_bg_color"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/rb_black"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Black"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_grey"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Grey"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="White"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_other"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Other"
+                android:textColor="#FFFFFF" />
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/et_custom_bg_color"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Hex color (e.g. #FF0000)"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:text="Included Tags"
             android:textColor="#FFFFFF" />
 
@@ -137,6 +235,30 @@
             android:hint="The numeric Stash tag IDs, seperated by commas"
             android:textColor="#FFFFFF"
             android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Included Studio IDs"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_included_studios"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="The numeric Stash studio IDs, seperated by commas"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <CheckBox
+            android:id="@+id/cb_include_child_studios"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Include Child Studios"
+            android:textColor="#FFFFFF"
+            android:checked="true" />
 
         <TextView
             android:layout_width="wrap_content"
