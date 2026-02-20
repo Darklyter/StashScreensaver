@@ -59,7 +59,7 @@ class ScreensaverService : DreamService() {
     private val imageViews = mutableListOf<ImageView>()
     private val imageJobs = mutableListOf<Job?>()
     private val currentRects = mutableMapOf<Int, Rect>()
-    private val layoutMutex = java.lang.Object()
+    private val layoutMutex = Any()
 
     private var mainJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -158,7 +158,7 @@ class ScreensaverService : DreamService() {
         mainJob?.cancel()
         mainJob = scope.launch {
             val startTime = System.currentTimeMillis()
-            tvLoading?.text = "Retrieving Images..."
+            tvLoading.text = "Retrieving Images..."
             fetchImagesFromStash(true)
             
             if (currentShuffledQueue.isNotEmpty()) {
@@ -181,18 +181,18 @@ class ScreensaverService : DreamService() {
                     startImageCycle(index, view)
                 }
             } else {
-                tvLoading?.text = "Error: Stash server unreachable"
+                tvLoading.text = "Error: Stash server unreachable"
             }
         }
     }
 
     private fun planGlobalInitialLayout(screenW: Int, screenH: Int) {
         synchronized(layoutMutex) {
-            var coverageTarget = 0.80
+            var coverageTarget = 0.75
             var success = false
             val random = Random(System.currentTimeMillis())
 
-            while (!success && coverageTarget > 0.3) {
+            while (!success && coverageTarget > 0.2) {
                 currentRects.clear()
                 val targetAreaPerImage = (screenW * screenH * coverageTarget) / displayCount
                 
@@ -204,16 +204,19 @@ class ScreensaverService : DreamService() {
                     
                     val baseH = sqrt(targetAreaPerImage / ratio)
                     
-                    repeat(300) {
+                    repeat(400) {
                         val h = (baseH * (0.9 + random.nextFloat() * 0.2)).toInt()
                         val w = (h * ratio).toInt()
                         val left = random.nextInt(0, (screenW - w).coerceAtLeast(1))
                         val top = random.nextInt(0, (screenH - h).coerceAtLeast(1))
                         val candidate = Rect(left, top, left + w, top + h)
                         
+                        val buffer = (screenW * 0.02).toInt()
+                        val candidateWithBuffer = Rect(candidate.left - buffer, candidate.top - buffer, candidate.right + buffer, candidate.bottom + buffer)
+                        
                         var hasOverlap = false
                         for (placedRect in currentRects.values) {
-                            if (Rect.intersects(candidate, placedRect)) {
+                            if (Rect.intersects(candidateWithBuffer, placedRect)) {
                                 hasOverlap = true
                                 break
                             }
@@ -367,7 +370,7 @@ class ScreensaverService : DreamService() {
             if (screenW <= 0 || screenH <= 0) return
 
             val ratio = if (imgData.height > 0) imgData.width.toDouble() / imgData.height else 0.66
-            val targetAreaPerImage = (screenW * screenH * 0.80) / displayCount
+            val targetAreaPerImage = (screenW * screenH * 0.75) / displayCount
             val idealH = sqrt(targetAreaPerImage / ratio)
 
             var bestScore = Double.NEGATIVE_INFINITY
@@ -377,7 +380,7 @@ class ScreensaverService : DreamService() {
             
             val random = Random(System.currentTimeMillis() + index + view.hashCode())
 
-            repeat(80) {
+            repeat(150) {
                 val isHero = random.nextFloat() < 0.20
                 val sizeMultiplier = if (isHero) (1.1 + random.nextFloat() * 0.4) else (0.85 + random.nextFloat() * 0.4)
                 val h = (idealH * sizeMultiplier).toInt().coerceIn(250, (screenH * 0.95).toInt())
@@ -396,7 +399,7 @@ class ScreensaverService : DreamService() {
                     }
                 }
                 
-                val score = (w.toDouble() * h) - (overlapArea * 20.0) 
+                val score = (w.toDouble() * h) - (overlapArea * 30.0)
                 if (score > bestScore) {
                     bestScore = score
                     bestParams = FrameLayout.LayoutParams(w, h).apply {
