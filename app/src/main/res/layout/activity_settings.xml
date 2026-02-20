@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    android:padding="32dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stash Server Address"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_stash_address"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. 192.168.1.71"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Port"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_stash_port"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. 9999"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Splash Screen Gender"
+            android:textColor="#FFFFFF" />
+
+        <RadioGroup
+            android:id="@+id/rg_gender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/rb_female"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Female"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_male"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="Male"
+                android:textColor="#FFFFFF" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Image Orientation"
+            android:textColor="#FFFFFF" />
+
+        <RadioGroup
+            android:id="@+id/rg_orientation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/rb_portrait"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Portrait"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_landscape"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Landscape"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_both"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Both"
+                android:textColor="#FFFFFF" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Included Tags"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_included_tags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="The numeric Stash tag IDs, seperated by commas"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Excluded Tags"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_excluded_tags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="The numeric Stash tag IDs, seperated by commas"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Images to Retrieve"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_retrieve_count"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Default: 250"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Images to Display at Once"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_display_count"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Default: 4"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Refresh Delay (seconds)"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_refresh_delay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Default: 30"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Delay Variance (%)"
+            android:textColor="#FFFFFF" />
+
+        <EditText
+            android:id="@+id/et_delay_variance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Default: 20"
+            android:inputType="number"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666" />
+
+        <Button
+            android:id="@+id/btn_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="32dp"
+            android:text="Save Settings" />
+
+    </LinearLayout>
+</ScrollView>
